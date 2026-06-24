@@ -723,18 +723,21 @@ def track():
     can_view_sensitive = admin or is_owner
 
     fees_visible = None
-    if fees and isinstance(fees, dict) and not fees.get("paid", True):
-        if not can_view_sensitive:
-            display_status = "Package held for customs fees — log in to continue and take further action"
-            fees_visible = {"exists": True, "paid": False}
-        else:
-            if fees.get("payment_submitted"):
-                display_status = "Payment Submitted - Pending Verification"
+    if fees and isinstance(fees, dict):
+        if not fees.get("paid", False):
+            if not can_view_sensitive:
+                display_status = "Package held for customs fees — log in to continue and take further action"
+                fees_visible = {"exists": True, "paid": False, "amount": fees.get("amount"), "reason": fees.get("reason")}
             else:
-                display_status = "On Hold for Customs/Taxes Payment"
+                if fees.get("payment_submitted"):
+                    display_status = "Payment Submitted - Pending Verification"
+                else:
+                    display_status = "On Hold for Customs/Taxes Payment"
+                fees_visible = fees
+        else:
             fees_visible = fees
     else:
-        fees_visible = fees if can_view_sensitive else None
+        fees_visible = None
 
     est = shipment.get("estimated_delivery")
     est_tbd = bool(shipment.get("estimated_delivery_tbd_on_hold", False))
@@ -1058,7 +1061,7 @@ def admin_panel():
         save_json(SHIPMENTS_FILE, shipments)
         return redirect(url_for("admin_panel"))
 
-    ship_list = []
+       ship_list = []
     for tid, s in shipments.items():
         ship_list.append({
             "tracking_id": tid,
@@ -1069,6 +1072,7 @@ def admin_panel():
             "destination": s.get("destination"),
             "estimated_delivery": s.get("estimated_delivery"),
             "estimated_delivery_tbd_on_hold": bool(s.get("estimated_delivery_tbd_on_hold", False)),
+            "current_location": s.get("current_location"),   # ← Added
         })
 
     app_list = []
@@ -1088,7 +1092,7 @@ def admin_panel():
 
 
 # -----------------------
-# Admin inline update route
+# Admin inline update route (UPDATED - Final Version)
 # -----------------------
 @app.route("/admin/update/<tracking_id>", methods=["POST"])
 def admin_update_shipment(tracking_id):
@@ -1104,21 +1108,26 @@ def admin_update_shipment(tracking_id):
     old_status = shipment.get("status", "")
     old_est = shipment.get("estimated_delivery")
 
+    # === Get all form data ===
     status = (request.form.get("status") or "").strip()
     custom_status = (request.form.get("custom_status") or "").strip()
     if status == "Custom Status" and custom_status:
         status = custom_status
+
+    progress_note = (request.form.get("progress_note") or "").strip()
+    current_location_raw = (request.form.get("current_location") or "").strip()
 
     fees_amount_raw = request.form.get("fees_amount")
     fees_reason_raw = request.form.get("fees_reason")
     clear_fees = request.form.get("clear_fees") == "1"
 
     estimated_delivery = (request.form.get("estimated_delivery") or "").strip()
-    estimated_delivery_tbd = True if request.form.get("estimated_delivery_tbd_on_hold") == "on" else False
+    estimated_delivery_tbd = request.form.get("estimated_delivery_tbd_on_hold") == "on"
 
     origin = (request.form.get("origin") or "").strip()
     destination = (request.form.get("destination") or "").strip()
 
+    # === Apply updates ===
     if origin:
         shipment["origin"] = origin
     if destination:
@@ -1130,16 +1139,35 @@ def admin_update_shipment(tracking_id):
     shipment["estimated_delivery_tbd_on_hold"] = bool(estimated_delivery_tbd)
     if estimated_delivery_tbd:
         shipment["estimated_delivery"] = None
-    else:
-        if estimated_delivery:
-            shipment["estimated_delivery"] = estimated_delivery
+    elif estimated_delivery:
+        shipment["estimated_delivery"] = estimated_delivery
 
+    # Current Location (New)
+    if current_location_raw:
+        try:
+            cl = json.loads(current_location_raw)
+            if isinstance(cl, dict):
+                shipment["current_location"] = cl
+        except Exception:
+            pass  # Ignore bad JSON
+
+    # Progress Note → Add to Shipment History (New)
+    if progress_note:
+        shipment.setdefault("events", []).append({
+            "date": now_str(),
+            "location": "Admin Update",
+            "description": progress_note
+        })
+
+    # Fees Logic
     apply_fees_logic(shipment, shipment.get("status", ""), fees_amount_raw, fees_reason_raw, clear_fees)
 
+    # Auto route update
     existing_snapshot = shipments.get(tracking_id, {}) or {}
     if should_regenerate_route(existing_snapshot, shipment):
         shipment["route"] = generate_route(shipment.get("origin"), shipment.get("destination"))
 
+    # Auto events
     add_status_event_if_changed(shipment, old_status, shipment.get("status", ""))
 
     new_est = shipment.get("estimated_delivery") or ""
