@@ -127,7 +127,7 @@
     .k { color:var(--muted); font-size:12px; font-weight:900; margin-bottom:6px; letter-spacing:.5px; }
     .v { font-weight:900; font-size:14px; line-height:1.35; }
 
-    /* Progress */
+    /* Progress - Only shows admin entered status */
     .progress { margin:16px 0 8px; padding:14px; border:1px solid var(--line); border-radius:14px; background:#fff; }
     .progress-head{
       display:flex; justify-content:space-between; align-items:center; gap:10px;
@@ -137,66 +137,17 @@
     .progress-head .title{
       font-weight:900; color:var(--brand); letter-spacing:.3px;
     }
-    .progress-head .hint{
-      font-size:12px; color:var(--muted); font-weight:700;
-    }
 
-    .steps {
-      display:grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap:10px;
-      align-items:stretch;
+    .current-status {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--brand);
+      padding: 16px 20px;
+      background: #f0f4f8;
+      border-radius: 12px;
+      border-left: 6px solid var(--brand);
+      margin-top: 8px;
     }
-
-    .step{
-      position:relative;
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px 10px 12px;
-      text-align:center;
-      font-weight:900;
-      font-size:12px;
-      color:var(--muted);
-      background:#f8fafc;
-      overflow:hidden;
-      box-shadow:0 6px 14px rgba(11,18,32,.05);
-    }
-
-    .step::before{
-      content:"";
-      position:absolute;
-      top:0; left:0; right:0;
-      height:4px;
-      background:transparent;
-    }
-
-    .step.done{
-      background:var(--doneBg);
-      border-color:var(--doneBorder);
-      color:var(--doneText);
-    }
-    .step.done::before{ background: var(--doneText); }
-
-    .step.active{
-      background:var(--activeBg);
-      border-color:var(--activeBorder);
-      color:var(--activeText);
-    }
-    .step.active::before{ background:#ffffff; opacity:.9; }
-
-    .steps-wrap{ position:relative; }
-    .steps-wrap:after{
-      content:"";
-      position:absolute;
-      left:10px; right:10px;
-      top:50%;
-      height:2px;
-      background:rgba(11,18,32,.08);
-      z-index:0;
-      transform:translateY(-50%);
-      border-radius:999px;
-    }
-    .steps > .step{ z-index:1; }
 
     #map { height: 420px; margin: 16px 0; border-radius:14px; overflow:hidden; border:1px solid var(--line); box-shadow:0 10px 24px rgba(11,18,32,.06); }
 
@@ -275,18 +226,6 @@
 
     .event-time{
       font-size:13px;
-      color:var(--muted);
-    }
-
-    .event-pill{
-      display:inline-flex;
-      align-items:center;
-      padding:6px 10px;
-      border-radius:999px;
-      font-weight:900;
-      font-size:12px;
-      border:1px solid var(--line);
-      background:#f8fafc;
       color:var(--muted);
     }
 
@@ -390,27 +329,14 @@
       </div>
     </div>
 
+    <!-- New Shipping Progress - Only admin entered status -->
     <div class="progress">
       <div class="progress-head">
-        <div class="title">Shipment progress</div>
-        <div class="hint">Updates refresh as new scans are added</div>
+        <div class="title">Shipment Progress</div>
+        <div class="hint">Current Status as updated by admin</div>
       </div>
-
-      {% set s = status|lower %}
-      {% set is_delivered = 'delivered' in s %}
-      {% set is_out = 'out for delivery' in s %}
-      {% set is_hold = 'hold' in s or 'pending verification' in s %}
-      {% set is_transit = 'transit' in s %}
-      {% set is_picked = ('picked up' in s) or is_transit or is_hold or is_out or is_delivered %}
-
-      <div class="steps-wrap">
-        <div class="steps">
-          <div class="step done">Created</div>
-          <div class="step {{ 'done' if is_picked else 'active' }}">Picked Up</div>
-          <div class="step {{ 'done' if is_out or is_delivered else ('active' if is_transit or is_hold else '') }}">In Transit</div>
-          <div class="step {{ 'active' if is_out else ('done' if is_delivered else '') }}">Out for Delivery</div>
-          <div class="step {{ 'done' if is_delivered else '' }}">Delivered</div>
-        </div>
+      <div class="current-status">
+        {{ status or "No Status Updated Yet" }}
       </div>
     </div>
 
@@ -422,8 +348,8 @@
       <div class="history">
         {% if events and events|length > 0 %}
           {% for event in events %}
-            <!-- Only show manually entered travel updates (no system/admin update) -->
-            {% if event.location != 'Admin Update' and event.location != 'System' and event.location != 'Shipment Update' %}
+            <!-- Only show manually entered travel updates -->
+            {% if event.description %}
               <div class="event">
                 <div class="icon {{ 'current' if loop.last else 'done' }}">
                   {% if loop.last %}●{% else %}✓{% endif %}
