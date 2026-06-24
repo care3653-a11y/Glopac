@@ -1093,7 +1093,7 @@ def admin_panel():
 
 
 # -----------------------
-# Admin inline update route (UPDATED - Final Version)
+# Admin inline update route (UPDATED)
 # -----------------------
 @app.route("/admin/update/<tracking_id>", methods=["POST"])
 def admin_update_shipment(tracking_id):
@@ -1109,13 +1109,14 @@ def admin_update_shipment(tracking_id):
     old_status = shipment.get("status", "")
     old_est = shipment.get("estimated_delivery")
 
-    # === Get all form data ===
+    # === Get form data ===
     status = (request.form.get("status") or "").strip()
     custom_status = (request.form.get("custom_status") or "").strip()
     if status == "Custom Status" and custom_status:
         status = custom_status
 
     progress_note = (request.form.get("progress_note") or "").strip()
+    update_location = (request.form.get("update_location") or "").strip()   # ← New
     current_location_raw = (request.form.get("current_location") or "").strip()
 
     fees_amount_raw = request.form.get("fees_amount")
@@ -1143,32 +1144,32 @@ def admin_update_shipment(tracking_id):
     elif estimated_delivery:
         shipment["estimated_delivery"] = estimated_delivery
 
-    # Current Location (New)
+    # Current Location (for map)
     if current_location_raw:
         try:
             cl = json.loads(current_location_raw)
             if isinstance(cl, dict):
                 shipment["current_location"] = cl
         except Exception:
-            pass  # Ignore bad JSON
+            pass
 
-    # Progress Note → Add to Shipment History (New)
+    # Progress Note with Custom Location (This is what you asked for)
     if progress_note:
+        location_name = update_location if update_location else "Admin Update"
         shipment.setdefault("events", []).append({
             "date": now_str(),
-            "location": "Admin Update",
+            "location": location_name,          # ← Shows "Paris Hub" etc.
             "description": progress_note
         })
 
-    # Fees Logic
+    # Fees
     apply_fees_logic(shipment, shipment.get("status", ""), fees_amount_raw, fees_reason_raw, clear_fees)
 
-    # Auto route update
+    # Auto features
     existing_snapshot = shipments.get(tracking_id, {}) or {}
     if should_regenerate_route(existing_snapshot, shipment):
         shipment["route"] = generate_route(shipment.get("origin"), shipment.get("destination"))
 
-    # Auto events
     add_status_event_if_changed(shipment, old_status, shipment.get("status", ""))
 
     new_est = shipment.get("estimated_delivery") or ""
@@ -1179,7 +1180,6 @@ def admin_update_shipment(tracking_id):
     shipments[tracking_id] = shipment
     save_json(SHIPMENTS_FILE, shipments)
     return redirect(url_for("admin_panel"))
-
 
 @app.route("/admin/approve/<email>", methods=["POST"])
 def admin_approve_application(email):
