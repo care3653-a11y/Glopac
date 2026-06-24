@@ -324,6 +324,27 @@ textarea{resize:vertical}
                   {% if ship.origin or ship.destination %}
                     <div class="small"><b>From:</b> {{ ship.origin or "-" }} • <b>To:</b> {{ ship.destination or "-" }}</div>
                   {% endif %}
+
+                  {% if ship.estimated_delivery_tbd_on_hold %}
+                    <div class="small"><b>Expected delivery:</b> Date will be made available when hold clears</div>
+                  {% elif ship.estimated_delivery %}
+                    <div class="small"><b>Expected delivery:</b> {{ ship.estimated_delivery }}</div>
+                  {% endif %}
+
+                  {% if ship.fees and not ship.fees.paid %}
+                    {% if ship.fees.payment_submitted %}
+                      <div class="pill pill-pending">Payment Submitted</div>
+                    {% else %}
+                      <div class="pill pill-hold">On Hold (Unpaid Fees)</div>
+                    {% endif %}
+                  {% elif ship.fees and ship.fees.paid %}
+                    <div class="pill pill-paid">Fees Paid</div>
+                  {% endif %}
+
+                  <div class="small" style="margin-top:8px; display:flex; gap:14px; flex-wrap:wrap;">
+                    <a href="/track?tracking_id={{ ship.tracking_id }}">View tracking</a>
+                    <a href="/admin/chat/{{ ship.tracking_id }}" style="font-weight:900;">Open chat</a>
+                  </div>
                 </div>
 
                 <form action="/delete/{{ ship.tracking_id }}" method="post">
@@ -339,19 +360,23 @@ textarea{resize:vertical}
                     <select name="status" required>
                       {% set st = ship.status or "" %}
                       <option value="{{ st }}">{{ st if st else "Choose…" }}</option>
+
                       <option value="Label Created">Label Created</option>
                       <option value="Picked Up">Picked Up</option>
                       <option value="In Transit">In Transit</option>
                       <option value="Arrived at Destination Country">Arrived at Destination Country</option>
+
                       <option value="Clearance Update">Clearance Update</option>
                       <option value="Clearance Process Successful">Clearance Process Successful</option>
                       <option value="Awaiting Dispatch">Awaiting Dispatch</option>
+
                       <option value="Out for Delivery">Out for Delivery</option>
                       <option value="Delivered">Delivered</option>
                       <option value="Delayed">Delayed</option>
                       <option value="On Hold">On Hold</option>
                       <option value="Custom Status">Custom Status</option>
                     </select>
+                    <div class="small">Choose “Custom Status” then type below.</div>
                   </div>
 
                   <div>
@@ -364,13 +389,15 @@ textarea{resize:vertical}
                   <div>
                     <label>Fees Amount</label>
                     <input type="number" step="0.01" name="fees_amount"
-                           value="{{ ship.fees.amount if ship.fees and ship.fees.amount is not none else '' }}">
+                           value="{{ ship.fees.amount if ship.fees and ship.fees.amount is not none else '' }}"
+                           placeholder="e.g. 125.00">
                   </div>
 
                   <div>
                     <label>Fees Reason</label>
                     <input type="text" name="fees_reason"
-                           value="{{ ship.fees.reason if ship.fees and ship.fees.reason else '' }}">
+                           value="{{ ship.fees.reason if ship.fees and ship.fees.reason else '' }}"
+                           placeholder="e.g. Customs and Taxes">
                   </div>
 
                   <div class="full">
@@ -388,17 +415,17 @@ textarea{resize:vertical}
                     <input type="text" name="custom_status" placeholder="e.g. Held at Sorting Facility">
                   </div>
 
-                  <!-- NEW FIELD -->
+                  <!-- NEW FIELD: Update Location -->
                   <div class="full">
-                    <label>Update Location / Hub <small>(e.g. Paris Hub, London Customs)</small></label>
+                    <label>Update Location / Hub <small>(shows in tracking history)</small></label>
                     <input type="text" name="update_location" placeholder="e.g. Paris Sorting Hub">
                   </div>
 
                   <div class="full">
                     <label><strong>Current Progress / Note</strong><br>
-                    <small>This will appear in Shipment History</small></label>
+                    <small>This will appear in Shipment History on tracking page</small></label>
                     <textarea name="progress_note" rows="3" 
-                              placeholder="Package arrived at Paris hub. Clearance in progress..."></textarea>
+                              placeholder="Package arrived at Paris hub. Clearance in progress. Expected release in 48 hours..."></textarea>
                   </div>
 
                   <div class="full">
