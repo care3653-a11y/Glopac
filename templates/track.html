@@ -414,45 +414,50 @@
     <div class="timeline">
       <h2>Shipment History</h2>
 
-      {% set last_index = (events|length) - 1 %}
-
       <div class="history">
-        {% for event in events %}
-          {% set is_current = (loop.index0 == last_index) %}
-          {% set loc_raw = (event.location or '') %}
-          {% set loc = 'Shipment Update' if loc_raw|lower == 'admin update' else loc_raw %}
+        {% if events and events|length > 0 %}
+          {% for event in events %}
+            {% set is_latest = loop.last %}
+            {% set loc_raw = (event.location or '')|lower %}
+            {% set loc = 'Admin Update' if loc_raw == 'admin update' else event.location %}
 
-          <div class="event">
-            <div class="icon {{ 'current' if is_current else 'done' }}">
-              {% if is_current %}●{% else %}✓{% endif %}
-            </div>
-
-            <div>
-              <div class="event-head">
-                <div class="event-date">{{ event.date }}</div>
-                <div class="event-pill {{ 'current' if is_current else 'done' }}">
-                  {{ 'Current update' if is_current else 'Completed' }}
-                </div>
-                <div class="event-pill">{{ loc }}</div>
+            <div class="event">
+              <div class="icon {{ 'current' if is_latest else 'done' }}">
+                {% if is_latest %}●{% else %}✓{% endif %}
               </div>
-              <div class="event-desc">{{ event.description }}</div>
+
+              <div>
+                <div class="event-head">
+                  <div class="event-date">{{ event.date }}</div>
+                  <div class="event-pill {{ 'current' if is_latest else 'done' }}">
+                    {{ 'Latest Update' if is_latest else 'Completed' }}
+                  </div>
+                  <div class="event-pill">{{ loc or 'System' }}</div>
+                </div>
+                <div class="event-desc">{{ event.description }}</div>
+              </div>
             </div>
-          </div>
-        {% endfor %}
+          {% endfor %}
+        {% else %}
+          <p>No updates yet.</p>
+        {% endif %}
       </div>
     </div>
 
-    {% if fees and (fees.exists or (fees.amount is defined)) and (not fees.paid) %}
+    <!-- Improved Fees Section -->
+    {% if fees and fees.amount is not none %}
       <div class="fees">
         <h3 style="margin:0 0 8px; color:#6b4a00;">Customs & Taxes</h3>
 
         {% if is_owner or is_admin %}
-          <p style="margin:6px 0;"><b>Amount:</b> ${{ fees.amount }}</p>
-          <p style="margin:6px 0;"><b>Reason:</b> {{ fees.reason }}</p>
+          <p style="margin:6px 0;"><b>Amount:</b> ${{ fees.amount | round(2) }}</p>
+          <p style="margin:6px 0;"><b>Reason:</b> {{ fees.reason or "Customs and Taxes" }}</p>
 
           {% if fees.payment_submitted %}
             <p style="margin:6px 0;"><b>Status:</b> Payment Submitted — Pending Verification</p>
             <p style="margin:6px 0;">Your payment is being verified. Once confirmed, the shipment will be released.</p>
+          {% elif fees.paid %}
+            <p style="margin:6px 0; color:#1f8f4e;"><b>✅ Fees Paid</b></p>
           {% else %}
             <p style="margin:6px 0;">Your shipment is on hold until payment is submitted.</p>
             <a href="/pay/{{ tracking_id }}" class="pay-btn">Submit Payment</a>
