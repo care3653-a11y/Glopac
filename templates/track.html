@@ -1,386 +1,531 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Glopac Shipping Express | Admin Panel</title>
+  <meta charset="UTF-8">
+  <title>Glopac Shipping Express | Tracking {{ tracking_id }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
   <style>
     :root{
       --brand:#003366;
       --brand2:#002244;
       --bg:#f4f7fa;
-      --card:#ffffff;
-      --muted:#5a667a;
       --line:#e6eaf0;
-      --good:#1f8f4e;
-      --danger:#e74c3c;
+      --muted:#5a667a;
+      --card:#fff;
+
       --warn:#b36b00;
+      --good:#1f8f4e;
+
+      /* Progress colors */
+      --activeInk:#0b1220;
+      --doneBg:#eaf7ef;
+      --doneBorder:#cfead9;
+      --doneText:#1f8f4e;
+
+      --activeBg:#0b1220;
+      --activeBorder:#0b1220;
+      --activeText:#ffffff;
+
+      --shadow: 0 14px 34px rgba(11,18,32,.10);
     }
+
     *{box-sizing:border-box}
-    body { font-family: Arial, sans-serif; margin:0; background:var(--bg); color:#0b1220; }
+    body { font-family: Arial, sans-serif; background: var(--bg); padding: 18px; margin:0; color:#0b1220; }
 
-.topbar{
-  background:var(--brand2);
-  color:#fff;
-  padding:10px 18px;
-  font-size:14px;
-  display:flex;
-  justify-content:space-between;
-  gap:12px;
-  align-items:center;
-}
-.topbar a{ color:#fff; font-weight:900; text-decoration:none; opacity:.95; margin-left:14px; }
-.topbar a:hover{opacity:1;text-decoration:underline;}
+    /* Service Disruption Notice */
+    .notice {
+      background: #fff3cd;
+      color: #856404;
+      padding: 16px 20px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 15px;
+      border-bottom: 1px solid #ffe69c;
+      margin-bottom: 16px;
+      border-radius: 8px;
+    }
 
-header{background:var(--card);border-bottom:1px solid var(--line);}
-.header-inner{
-  max-width:1200px;margin:0 auto;padding:14px 18px;
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
-}
-.brandbox{display:flex;align-items:center;gap:12px;}
-.brandbox img{height:44px;width:auto;display:block;}
-.brandbox .name{font-weight:900;color:var(--brand);letter-spacing:.2px;font-size:18px;line-height:1.1;}
-.brandbox .tag{font-size:12px;color:var(--muted);font-weight:700;margin-top:2px;}
+    .top {
+      max-width:1200px;margin:0 auto 14px;
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:10px 12px;
+    }
+    .brand { display:flex;align-items:center;gap:10px; }
+    .brand img{ height:44px; width:auto; }
+    .brand .name{ font-weight:900;color:var(--brand); letter-spacing:.2px; }
+    .brand .tag{ font-size:12px;color:var(--muted);font-weight:700; margin-top:2px; }
+    .nav a{ margin-left:14px; color:var(--brand); font-weight:800; text-decoration:none; }
+    .nav a:hover{ text-decoration:underline; }
 
-.wrap{max-width:1200px;margin:0 auto;padding:18px;}
-.grid{display:grid;grid-template-columns: 1.1fr .9fr; gap:14px; align-items:start;}
-.card{
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:14px;
-  padding:16px;
-  box-shadow:0 8px 24px rgba(11,18,32,.06);
-  margin-bottom:14px;
-}
-h2{margin:0 0 12px;color:var(--brand);}
-.muted{color:var(--muted);font-size:13px;margin-top:6px;line-height:1.45;}
+    .container {
+      max-width: 1200px; margin: auto;
+      background: var(--card);
+      padding: 18px;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      border:1px solid var(--line);
+    }
 
-label{display:block;margin:10px 0 5px;font-weight:800;color:#1b2a44;}
-input, textarea, select{
-  width:100%;
-  padding:10px;
-  border:1px solid var(--line);
-  border-radius:10px;
-  outline:none;
-  background:#fff;
-  font-size:14px;
-}
-textarea{resize:vertical}
-.btn{
-  padding:11px 14px;
-  border:0;
-  border-radius:10px;
-  background:var(--brand);
-  color:#fff;
-  font-weight:900;
-  cursor:pointer;
-  margin-top:10px;
-  margin-right:8px;
-}
-.btn:hover{background:var(--brand2);}
-.btn-good{background:var(--good);}
-.btn-danger{background:var(--danger);}
-.btn-warn{background:var(--warn);}
+    .herohead{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      flex-wrap:wrap;
+      padding-bottom:10px;
+      border-bottom:1px solid var(--line);
+      margin-bottom:12px;
+    }
 
-.list{list-style:none;padding:0;margin:0;}
-.item{
-  padding:12px;
-  border:1px solid var(--line);
-  border-radius:14px;
-  background:#fff;
-  margin:10px 0;
-}
-.topline{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:12px;
-}
-.tid{font-weight:900;}
-.small{font-size:12px;color:var(--muted);margin-top:6px;}
-.pill{
-  display:inline-block;
-  padding:6px 10px;
-  border-radius:999px;
-  font-weight:900;
-  font-size:12px;
-  border:1px solid var(--line);
-  background:#f8fafc;
-  color:var(--muted);
-  margin-top:8px;
-}
-.pill-hold{background:#fff3cd;border-color:#ffe69c;color:#8a5a00;}
-.pill-paid{background:#eaf7ef;border-color:#cfead9;color:#1f8f4e;}
-.pill-pending{background:#eef3fb;border-color:#d7e3f7;color:var(--brand);}
+    h1 { color: var(--brand); margin:0 0 6px; font-size:22px; letter-spacing:.2px; }
+    .status {
+      font-size: 16px;
+      font-weight:900;
+      margin: 8px 0 0;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      font-weight:900;
+      font-size:12px;
+      border:1px solid var(--line);
+      background:#f8fafc;
+      color:var(--muted);
+    }
+    .badge-status{
+      background:#fff3cd;
+      border-color:#ffe69c;
+      color:#8a5a00;
+    }
+    .badge-track{
+      background:#eef3fb;
+      border-color:#d7e3f7;
+      color:var(--brand);
+    }
 
-.inline-form{
-  display:grid;
-  grid-template-columns: 1.1fr 1fr 1fr;
-  gap:10px;
-  margin-top:10px;
-  align-items:end;
-}
-.inline-form .full{grid-column: 1 / -1;}
-.inline-actions{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  margin-top:10px;
-  align-items:center;
-}
-.hr{border-top:1px solid var(--line); margin:14px 0;}
-.two{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
+    .sub { color: var(--muted); margin: 6px 0 0; font-size:13px; }
 
-@media (max-width: 980px){
-  .grid{grid-template-columns:1fr;}
-  .inline-form{grid-template-columns:1fr;}
-  .two{grid-template-columns:1fr;}
-}  </style></head>
+    .grid { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-top:14px; }
+    .box {
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+      background:#fff;
+      box-shadow:0 8px 18px rgba(11,18,32,.05);
+    }
+    .k { color:var(--muted); font-size:12px; font-weight:900; margin-bottom:6px; letter-spacing:.5px; }
+    .v { font-weight:900; font-size:14px; line-height:1.35; }
+
+    /* Progress */
+    .progress { margin:16px 0 8px; padding:14px; border:1px solid var(--line); border-radius:14px; background:#fff; }
+    .progress-head{
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .progress-head .title{
+      font-weight:900; color:var(--brand); letter-spacing:.3px;
+    }
+    .progress-head .hint{
+      font-size:12px; color:var(--muted); font-weight:700;
+    }
+
+    .steps {
+      display:grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap:10px;
+      align-items:stretch;
+    }
+
+    .step{
+      position:relative;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px 10px 12px;
+      text-align:center;
+      font-weight:900;
+      font-size:12px;
+      color:var(--muted);
+      background:#f8fafc;
+      overflow:hidden;
+      box-shadow:0 6px 14px rgba(11,18,32,.05);
+    }
+
+    .step::before{
+      content:"";
+      position:absolute;
+      top:0; left:0; right:0;
+      height:4px;
+      background:transparent;
+    }
+
+    .step.done{
+      background:var(--doneBg);
+      border-color:var(--doneBorder);
+      color:var(--doneText);
+    }
+    .step.done::before{ background: var(--doneText); }
+
+    .step.active{
+      background:var(--activeBg);
+      border-color:var(--activeBorder);
+      color:var(--activeText);
+    }
+    .step.active::before{ background:#ffffff; opacity:.9; }
+
+    .steps-wrap{ position:relative; }
+    .steps-wrap:after{
+      content:"";
+      position:absolute;
+      left:10px; right:10px;
+      top:50%;
+      height:2px;
+      background:rgba(11,18,32,.08);
+      z-index:0;
+      transform:translateY(-50%);
+      border-radius:999px;
+    }
+    .steps > .step{ z-index:1; }
+
+    #map { height: 420px; margin: 16px 0; border-radius:14px; overflow:hidden; border:1px solid var(--line); box-shadow:0 10px 24px rgba(11,18,32,.06); }
+
+    .timeline { margin: 18px 0; }
+    .timeline h2{ margin:0 0 10px;color:var(--brand); }
+
+    .history{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      padding: 4px 2px;
+    }
+
+    .event{
+      display:grid;
+      grid-template-columns: 32px 1fr;
+      gap:12px;
+      align-items:flex-start;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fff;
+      box-shadow:0 8px 18px rgba(11,18,32,.05);
+      padding:12px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .event::before{
+      content:"";
+      position:absolute;
+      left:0; top:0; bottom:0;
+      width:4px;
+      background: rgba(0,51,102,.20);
+    }
+
+    .icon{
+      width:28px; height:28px;
+      border-radius:999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:900;
+      font-size:14px;
+      margin-top:2px;
+      border:2px solid var(--line);
+      color:var(--muted);
+      background:#f8fafc;
+      flex:0 0 auto;
+    }
+
+    .icon.done{
+      background: var(--doneBg);
+      border-color: var(--doneBorder);
+      color: var(--doneText);
+    }
+
+    .icon.current{
+      background:#0b1220;
+      border-color:#0b1220;
+      color:#fff;
+      font-size:12px;
+    }
+
+    .event-head{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px 10px;
+      align-items:center;
+      margin-bottom:6px;
+    }
+
+    .event-date{
+      font-weight:900;
+      color:#0b1220;
+    }
+
+    .event-time{
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    .event-pill{
+      display:inline-flex;
+      align-items:center;
+      padding:6px 10px;
+      border-radius:999px;
+      font-weight:900;
+      font-size:12px;
+      border:1px solid var(--line);
+      background:#f8fafc;
+      color:var(--muted);
+    }
+
+    .event-desc{
+      color: #0b1220;
+      line-height:1.5;
+      font-weight:700;
+      font-size:15px;
+      margin:8px 0 4px;
+    }
+
+    .event-location{
+      color:var(--muted);
+      font-size:13.5px;
+    }
+
+    .event-city{
+      color:#555;
+      font-size:13px;
+      font-style:italic;
+    }
+
+    .fees { background: #fff3cd; padding: 16px; border-radius: 14px; margin: 14px 0; border:1px solid #ffe69c; }
+    .pay-btn {
+      display: inline-block; background: var(--good); color: white; padding: 12px 22px;
+      text-decoration: none; border-radius: 12px; font-weight: 900;
+      box-shadow:0 10px 22px rgba(31,143,78,.18);
+    }
+    .pay-btn:hover { filter:brightness(.95); }
+
+    .footer-links{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+    .footer-links a{ color:var(--brand); font-weight:900; text-decoration:none; }
+    .footer-links a:hover{ text-decoration:underline; }
+
+    @media (max-width: 980px){
+      .grid{ grid-template-columns:1fr; }
+      .steps{ grid-template-columns:1fr; }
+      .steps-wrap:after{ display:none; }
+      .nav{ display:none; }
+      #map{ height:360px; }
+      .event{ grid-template-columns: 28px 1fr; }
+    }
+  </style>
+</head>
 <body>
 
-  <div class="topbar">
-    <div>Glopac Shipping Express Admin • Manage shipments, users & payments</div>
-    <div>
-      <a href="/">Home</a>
-      <a href="/logout">Logout</a>
-    </div>
+  <!-- Service Disruption Notice - Auto hides after 10 seconds -->
+  <div id="notice" class="notice">
+    We had a technical error from March 25th to April 2nd. Our team is working hard to restore all services. 
+    Most services are now up and running. Thank you for your patience.
   </div>
 
-  <header>
-    <div class="header-inner">
-      <div class="brandbox">
-        <img src="/static/img/glopacshippingexpress-logo.jpg" alt="Glopac Shipping Express Logo">
-        <div>
-          <div class="name">Glopac Shipping Express</div>
-          <div class="tag">Admin Panel</div>
-        </div>
-      </div>
-      <div class="small">
-        Logged in as <b>{{ user.email }}</b>
+  <div class="top">
+    <div class="brand">
+      <img src="/static/img/blueoakexpress-logo.jpg" alt="Glopac Shipping Express Logo">
+      <div>
+        <div class="name">Glopac Shipping Express</div>
+        <div class="tag">Track • Ship • Deliver</div>
       </div>
     </div>
-  </header>
-
-  <div class="wrap">
-    <div class="grid">
-
-  <!-- LEFT - Applications -->
-  <div>
-
-    <div class="card">
-      <h2>New Applications</h2>
-      <p class="muted">Approve to create a user account and assign a plain password. Reject to decline.</p>
-
-      {% if applications and applications|length > 0 %}
-        <ul class="list">
-          {% for a in applications %}
-            <li class="item">
-              <div class="topline">
-                <div>
-                  <div class="tid">{{ a.name }} — {{ a.email }}</div>
-                  <div class="small"><b>Status:</b> {{ a.status }} • <b>Submitted:</b> {{ a.submitted_at }}</div>
-                  {% if a.reason %}<div class="small"><b>Reason:</b> {{ a.reason }}</div>{% endif %}
-                  {% if a.admin_note %}<div class="small"><b>Admin note:</b> {{ a.admin_note }}</div>{% endif %}
-                </div>
-                <div>
-                  {% if a.status == "pending" %}
-                    <span class="pill pill-pending">Pending</span>
-                  {% elif a.status == "approved" %}
-                    <span class="pill pill-paid">Approved</span>
-                  {% else %}
-                    <span class="pill pill-hold">Rejected</span>
-                  {% endif %}
-                </div>
-              </div>
-
-              {% if a.status == "pending" %}
-                <div class="hr"></div>
-
-                <div class="two">
-                  <form action="/admin/approve/{{ a.email }}" method="post">
-                    <label>Assign Password (plain)</label>
-                    <input type="text" name="password" placeholder="Set a password for this user" required>
-
-                    <label>Admin note (optional)</label>
-                    <input type="text" name="admin_note" placeholder="e.g. Approved - verified identity">
-
-                    <button class="btn btn-good" type="submit">Approve & Create User</button>
-                  </form>
-
-                  <form action="/admin/reject/{{ a.email }}" method="post">
-                    <label>Admin note (optional)</label>
-                    <input type="text" name="admin_note" placeholder="Reason for rejection">
-
-                    <button class="btn btn-danger" type="submit">Reject</button>
-                  </form>
-                </div>
-              {% endif %}
-            </li>
-          {% endfor %}
-        </ul>
+    <div class="nav">
+      <a href="/">Home</a>
+      <a href="/support">Support</a>
+      <a href="/policies">Policies</a>
+      {% if user %}
+        <a href="/logout">Logout</a>
       {% else %}
-        <p class="muted">No applications yet.</p>
+        <a href="/login">Login</a>
       {% endif %}
     </div>
-
   </div>
 
-  <!-- RIGHT - 3 Main Forms -->
-  <div>
+  <div class="container">
 
-    <!-- 1. Create New Shipment -->
-    <div class="card">
-      <h2>1. Create New Shipment</h2>
-      <p class="muted">Basic shipment information (fees removed)</p>
-
-      <form action="/admin" method="post">
-        <input type="hidden" name="form_type" value="shipment">
-
-        <label>Tracking ID</label>
-        <input type="text" name="tracking_id" required placeholder="e.g. BOE808080">
-
-        <div class="two">
-          <div>
-            <label>Status</label>
-            <input type="text" name="status" required placeholder="In Transit, On Hold, Delivered">
-          </div>
-          <div>
-            <label>Owner Email</label>
-            <input type="email" name="owner_email" placeholder="customer@email.com">
-          </div>
+    <div class="herohead">
+      <div>
+        <h1>Tracking</h1>
+        <div class="status">
+          <span class="badge badge-track">Tracking ID: {{ tracking_id }}</span>
+          <span class="badge badge-status">Status: {{ status }}</span>
         </div>
 
-        <div class="two">
-          <div>
-            <label>Origin (address/city)</label>
-            <input type="text" name="origin" placeholder="e.g. New York, USA">
-          </div>
-          <div>
-            <label>Destination (address/city)</label>
-            <input type="text" name="destination" placeholder="e.g. London, UK">
-          </div>
-        </div>
-
-        <label>Package Details</label>
-        <input type="text" name="package_details" placeholder="e.g. Electronics - 2kg">
-
-        <div class="two">
-          <div>
-            <label>Expected Delivery Date</label>
-            <input type="date" name="estimated_delivery">
-          </div>
-          <div>
-            <label>
-              <input type="checkbox" name="estimated_delivery_tbd_on_hold" style="width:auto;margin-right:8px;">
-              Date available when hold clears
-            </label>
-          </div>
-        </div>
-
-        <button class="btn" type="submit">Create Shipment</button>
-      </form>
-    </div>
-
-    <!-- 2. Travel History Update -->
-    <div class="card">
-      <h2>2. Travel History Update</h2>
-      <p class="muted">Select shipment and add travel update</p>
-
-      <label>Select Shipment</label>
-      <select id="travel-select" style="margin-bottom:15px;width:100%;">
-        <option value="">-- Select Shipment --</option>
-        {% for ship in shipments %}
-          <option value="{{ ship.tracking_id }}">{{ ship.owner_email }} — {{ ship.tracking_id }}</option>
-        {% endfor %}
-      </select>
-
-      <div id="travel-form" style="display:none;">
-        <form action="/admin/update/{{ ship.tracking_id }}" method="post" id="travel-update-form">
-          <label>Date & Time</label>
-          <input type="datetime-local" name="update_datetime" required>
-
-          <label>Activity</label>
-          <textarea name="progress_note" rows="3" placeholder="Package cleared customs and moving forward..."></textarea>
-
-          <label>Location</label>
-          <input type="text" name="update_location" placeholder="e.g. Paris Sorting Hub">
-
-          <label>Current City</label>
-          <input type="text" name="current_city" placeholder="e.g. Paris, France">
-
-          <button class="btn btn-good" type="submit">Add Travel Update</button>
-          <a href="#" id="view-travel" class="btn" target="_blank">View Shipment</a>
-          <a href="#" id="msg-travel" class="btn">Message Customer</a>
-        </form>
+        {% if estimated_delivery %}
+          <div class="sub">Estimated Delivery: <b>{{ estimated_delivery }}</b></div>
+        {% endif %}
       </div>
     </div>
 
-    <!-- 3. Customs & Fees -->
-    <div class="card">
-      <h2>3. Customs & Fees</h2>
-      <p class="muted">Select shipment and activate customs hold</p>
-
-      <label>Select Shipment</label>
-      <select id="customs-select" style="margin-bottom:15px;width:100%;">
-        <option value="">-- Select Shipment --</option>
-        {% for ship in shipments %}
-          <option value="{{ ship.tracking_id }}">{{ ship.owner_email }} — {{ ship.tracking_id }}</option>
-        {% endfor %}
-      </select>
-
-      <label><input type="checkbox" id="activate-customs"> Activate Customs / Fee Hold</label>
-
-      <div id="customs-form" style="display:none;">
-        <form action="/admin/update/{{ ship.tracking_id }}" method="post" id="customs-update-form">
-          <label>Fee Amount</label>
-          <input type="number" step="0.01" name="fees_amount" placeholder="e.g. 125.00">
-
-          <label>Fee Reason</label>
-          <input type="text" name="fees_reason" placeholder="e.g. Customs and Taxes">
-
-          <label>New Expected Delivery Date</label>
-          <input type="date" name="estimated_delivery">
-
-          <button class="btn btn-warn" type="submit">Apply Customs Hold</button>
-          <a href="#" id="view-customs" class="btn" target="_blank">View Shipment</a>
-          <a href="#" id="msg-customs" class="btn">Message Customer</a>
-        </form>
+    <div class="grid">
+      <div class="box">
+        <div class="k">ORIGIN</div>
+        <div class="v">{{ origin }}</div>
+      </div>
+      <div class="box">
+        <div class="k">DESTINATION</div>
+        <div class="v">{{ destination }}</div>
+      </div>
+      <div class="box">
+        <div class="k">PACKAGE</div>
+        <div class="v">{{ package_details }}</div>
       </div>
     </div>
 
+    <div class="progress">
+      <div class="progress-head">
+        <div class="title">Shipment progress</div>
+        <div class="hint">Updates refresh as new scans are added</div>
+      </div>
+
+      {% set s = status|lower %}
+      {% set is_delivered = 'delivered' in s %}
+      {% set is_out = 'out for delivery' in s %}
+      {% set is_hold = 'hold' in s or 'pending verification' in s %}
+      {% set is_transit = 'transit' in s %}
+      {% set is_picked = ('picked up' in s) or is_transit or is_hold or is_out or is_delivered %}
+
+      <div class="steps-wrap">
+        <div class="steps">
+          <div class="step done">Created</div>
+          <div class="step {{ 'done' if is_picked else 'active' }}">Picked Up</div>
+          <div class="step {{ 'done' if is_out or is_delivered else ('active' if is_transit or is_hold else '') }}">In Transit</div>
+          <div class="step {{ 'active' if is_out else ('done' if is_delivered else '') }}">Out for Delivery</div>
+          <div class="step {{ 'done' if is_delivered else '' }}">Delivered</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="timeline">
+      <h2>Shipment History</h2>
+
+      <div class="history">
+        {% if events and events|length > 0 %}
+          {% for event in events %}
+            <!-- Only show manually entered travel updates (no system/admin update) -->
+            {% if event.location != 'Admin Update' and event.location != 'System' and event.location != 'Shipment Update' %}
+              <div class="event">
+                <div class="icon {{ 'current' if loop.last else 'done' }}">
+                  {% if loop.last %}●{% else %}✓{% endif %}
+                </div>
+
+                <div>
+                  <div class="event-head">
+                    <div class="event-date">{{ event.date }}</div>
+                    <div class="event-time">{{ event.time or '' }}</div>
+                  </div>
+                  <div class="event-desc">{{ event.description }}</div>
+                  <div class="event-location">{{ event.location or '' }}</div>
+                  <div class="event-city">{{ event.current_city or '' }}</div>
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <p>No travel history yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Improved Fees Section -->
+    {% if fees and fees.amount is not none %}
+      <div class="fees">
+        <h3 style="margin:0 0 8px; color:#6b4a00;">Customs & Taxes</h3>
+
+        {% if is_owner or is_admin %}
+          <p style="margin:6px 0;"><b>Amount:</b> ${{ fees.amount | round(2) }}</p>
+          <p style="margin:6px 0;"><b>Reason:</b> {{ fees.reason or "Customs and Taxes" }}</p>
+
+          {% if fees.payment_submitted %}
+            <p style="margin:6px 0;"><b>Status:</b> Payment Submitted — Pending Verification</p>
+            <p style="margin:6px 0;">Your payment is being verified. Once confirmed, the shipment will be released.</p>
+          {% elif fees.paid %}
+            <p style="margin:6px 0; color:#1f8f4e;"><b>✅ Fees Paid</b></p>
+          {% else %}
+            <p style="margin:6px 0;">Your shipment is on hold until payment is submitted.</p>
+            <a href="/pay/{{ tracking_id }}" class="pay-btn">Submit Payment</a>
+          {% endif %}
+
+        {% else %}
+          <p style="margin:6px 0;">
+            Package held for customs fees — <a href="/login" style="font-weight:900;">log in</a> to continue and take further action.
+          </p>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <div class="footer-links">
+      <a href="/">Track Another</a>
+      <a href="/support">Need Help?</a>
+    </div>
   </div>
 
-</div>  </div>
+  <script>
+    // Auto-hide notice after 10 seconds
+    setTimeout(function() {
+      var notice = document.getElementById("notice");
+      if (notice) {
+        notice.style.transition = "opacity 0.8s ease";
+        notice.style.opacity = "0";
+        setTimeout(function() {
+          notice.style.display = "none";
+        }, 800);
+      }
+    }, 10000);
 
-<script>
-  // Show Travel Form when shipment selected
-  document.getElementById('travel-select').addEventListener('change', function() {
-    const form = document.getElementById('travel-form');
-    if (this.value) {
-      form.style.display = 'block';
-      document.getElementById('view-travel').href = `/track?tracking_id=${this.value}`;
-      document.getElementById('msg-travel').href = `/admin/chat/${this.value}`;
+    // Map script
+    var map = L.map('map').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    var route = {{ route | tojson | safe }};
+    if (route && route.length > 0) {
+      var polyline = L.polyline(route.map(p => [p.lat, p.lng])).addTo(map);
+      map.fitBounds(polyline.getBounds());
+      route.forEach(p => L.marker([p.lat, p.lng]).addTo(map).bindPopup(p.label || 'Route Point'));
     }
-  });
 
-  // Show Customs Form when checkbox ticked
-  document.getElementById('activate-customs').addEventListener('change', function() {
-    const form = document.getElementById('customs-form');
-    form.style.display = this.checked ? 'block' : 'none';
-  });
+    {% if current_location %}
+      var curr = {{ current_location | tojson | safe }};
+      if (curr && curr.lat && curr.lng) {
+        L.marker([curr.lat, curr.lng]).addTo(map).bindPopup('Current Location');
+      }
+    {% endif %}
+  </script>
 
-  // Customs select change
-  document.getElementById('customs-select').addEventListener('change', function() {
-    if (this.value) {
-      document.getElementById('view-customs').href = `/track?tracking_id=${this.value}`;
-      document.getElementById('msg-customs').href = `/admin/chat/${this.value}`;
-    }
-  });
-</script>
+  {% include "_footer.html" %}
+
+  {% if chat_unread_count and chat_latest_tracking_id %}
+    <a href="/payment_chat/{{ chat_latest_tracking_id }}" style="
+      position:fixed; right:16px; bottom:16px; z-index:9999;
+      background:#003366; color:white; text-decoration:none;
+      padding:12px 14px; border-radius:999px; font-weight:900;
+      box-shadow:0 10px 24px rgba(11,18,32,.18);
+    ">
+      New message ({{ chat_unread_count }}) • Tap to open chat
+    </a>
+  {% endif %}
 
 </body>
 </html>
