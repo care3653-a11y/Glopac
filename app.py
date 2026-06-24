@@ -1061,7 +1061,8 @@ def admin_panel():
         save_json(SHIPMENTS_FILE, shipments)
         return redirect(url_for("admin_panel"))
 
-       ship_list = []
+          # Prepare shipments for admin template
+    ship_list = []
     for tid, s in shipments.items():
         ship_list.append({
             "tracking_id": tid,
@@ -1072,7 +1073,7 @@ def admin_panel():
             "destination": s.get("destination"),
             "estimated_delivery": s.get("estimated_delivery"),
             "estimated_delivery_tbd_on_hold": bool(s.get("estimated_delivery_tbd_on_hold", False)),
-            "current_location": s.get("current_location"),   # ← Added
+            "current_location": s.get("current_location")
         })
 
     app_list = []
