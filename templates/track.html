@@ -418,8 +418,7 @@
         {% if events and events|length > 0 %}
           {% for event in events %}
             {% set is_latest = loop.last %}
-            {% set loc_raw = (event.location or '')|lower %}
-            {% set loc = 'Admin Update' if loc_raw == 'admin update' else event.location %}
+            {% set loc = event.location or 'System' %}
 
             <div class="event">
               <div class="icon {{ 'current' if is_latest else 'done' }}">
@@ -432,7 +431,7 @@
                   <div class="event-pill {{ 'current' if is_latest else 'done' }}">
                     {{ 'Latest Update' if is_latest else 'Completed' }}
                   </div>
-                  <div class="event-pill">{{ loc or 'System' }}</div>
+                  <div class="event-pill">{{ loc }}</div>
                 </div>
                 <div class="event-desc">{{ event.description }}</div>
               </div>
