@@ -36,6 +36,7 @@
     *{box-sizing:border-box}
     body { font-family: Arial, sans-serif; background: var(--bg); padding: 18px; margin:0; color:#0b1220; }
 
+    /* Service Disruption Notice */
     .notice {
       background: #fff3cd;
       color: #856404;
@@ -126,7 +127,7 @@
     .k { color:var(--muted); font-size:12px; font-weight:900; margin-bottom:6px; letter-spacing:.5px; }
     .v { font-weight:900; font-size:14px; line-height:1.35; }
 
-    /* Progress Card */
+    /* Progress */
     .progress { margin:16px 0 8px; padding:14px; border:1px solid var(--line); border-radius:14px; background:#fff; }
     .progress-head{
       display:flex; justify-content:space-between; align-items:center; gap:10px;
@@ -135,6 +136,9 @@
     }
     .progress-head .title{
       font-weight:900; color:var(--brand); letter-spacing:.3px;
+    }
+    .progress-head .hint{
+      font-size:12px; color:var(--muted); font-weight:700;
     }
 
     .steps {
@@ -158,22 +162,46 @@
       box-shadow:0 6px 14px rgba(11,18,32,.05);
     }
 
+    .step::before{
+      content:"";
+      position:absolute;
+      top:0; left:0; right:0;
+      height:4px;
+      background:transparent;
+    }
+
     .step.done{
       background:var(--doneBg);
       border-color:var(--doneBorder);
       color:var(--doneText);
     }
+    .step.done::before{ background: var(--doneText); }
+
     .step.active{
       background:var(--activeBg);
       border-color:var(--activeBorder);
       color:var(--activeText);
     }
+    .step.active::before{ background:#ffffff; opacity:.9; }
+
+    .steps-wrap{ position:relative; }
+    .steps-wrap:after{
+      content:"";
+      position:absolute;
+      left:10px; right:10px;
+      top:50%;
+      height:2px;
+      background:rgba(11,18,32,.08);
+      z-index:0;
+      transform:translateY(-50%);
+      border-radius:999px;
+    }
+    .steps > .step{ z-index:1; }
 
     #map { height: 420px; margin: 16px 0; border-radius:14px; overflow:hidden; border:1px solid var(--line); box-shadow:0 10px 24px rgba(11,18,32,.06); }
 
     .timeline { margin: 18px 0; }
-    .timeline h2{ margin:0 0 10px;color:var(--brand); cursor:pointer; }
-    .timeline-content { display:none; }
+    .timeline h2{ margin:0 0 10px;color:var(--brand); }
 
     .history{
       display:flex;
@@ -193,36 +221,35 @@
       box-shadow:0 8px 18px rgba(11,18,32,.05);
       padding:12px;
       position:relative;
+      overflow:hidden;
     }
 
     .event::before{
       content:"";
       position:absolute;
-      left:15px; top:0; bottom:0;
-      width:3px;
-      background: #e6eaf0;
-      z-index:0;
+      left:0; top:0; bottom:0;
+      width:4px;
+      background: rgba(0,51,102,.20);
     }
 
     .icon{
-      width:30px; height:30px;
+      width:28px; height:28px;
       border-radius:999px;
       display:flex;
       align-items:center;
       justify-content:center;
       font-weight:900;
       font-size:14px;
-      border:3px solid var(--line);
+      margin-top:2px;
+      border:2px solid var(--line);
       color:var(--muted);
       background:#f8fafc;
       flex:0 0 auto;
-      z-index:1;
-      position:relative;
     }
 
     .icon.done{
       background: var(--doneBg);
-      border-color: var(--doneText);
+      border-color: var(--doneBorder);
       color: var(--doneText);
     }
 
@@ -230,13 +257,56 @@
       background:#0b1220;
       border-color:#0b1220;
       color:#fff;
+      font-size:12px;
+    }
+
+    .event-head{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px 10px;
+      align-items:center;
+      margin-bottom:6px;
+    }
+
+    .event-date{
+      font-weight:900;
+      color:#0b1220;
+    }
+
+    .event-time{
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    .event-pill{
+      display:inline-flex;
+      align-items:center;
+      padding:6px 10px;
+      border-radius:999px;
+      font-weight:900;
+      font-size:12px;
+      border:1px solid var(--line);
+      background:#f8fafc;
+      color:var(--muted);
     }
 
     .event-desc{
-      color: var(--muted);
-      line-height:1.45;
+      color: #0b1220;
+      line-height:1.5;
       font-weight:700;
+      font-size:15px;
+      margin:8px 0 4px;
+    }
+
+    .event-location{
+      color:var(--muted);
+      font-size:13.5px;
+    }
+
+    .event-city{
+      color:#555;
       font-size:13px;
+      font-style:italic;
     }
 
     .fees { background: #fff3cd; padding: 16px; border-radius: 14px; margin: 14px 0; border:1px solid #ffe69c; }
@@ -245,6 +315,7 @@
       text-decoration: none; border-radius: 12px; font-weight: 900;
       box-shadow:0 10px 22px rgba(31,143,78,.18);
     }
+    .pay-btn:hover { filter:brightness(.95); }
 
     .footer-links{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
     .footer-links a{ color:var(--brand); font-weight:900; text-decoration:none; }
@@ -253,14 +324,16 @@
     @media (max-width: 980px){
       .grid{ grid-template-columns:1fr; }
       .steps{ grid-template-columns:1fr; }
+      .steps-wrap:after{ display:none; }
       .nav{ display:none; }
       #map{ height:360px; }
+      .event{ grid-template-columns: 28px 1fr; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Service Disruption Notice -->
+  <!-- Service Disruption Notice - Auto hides after 10 seconds -->
   <div id="notice" class="notice">
     We had a technical error from March 25th to April 2nd. Our team is working hard to restore all services. 
     Most services are now up and running. Thank you for your patience.
@@ -317,25 +390,24 @@
       </div>
     </div>
 
-    <!-- Shipping Progress Card -->
     <div class="progress">
       <div class="progress-head">
-        <div class="title">Shipment Progress</div>
-        <div class="hint">Current Status</div>
+        <div class="title">Shipment progress</div>
+        <div class="hint">Updates refresh as new scans are added</div>
       </div>
 
       {% set s = status|lower %}
       {% set is_delivered = 'delivered' in s %}
       {% set is_out = 'out for delivery' in s %}
-      {% set is_hold = 'hold' in s or 'pending' in s %}
-      {% set is_transit = 'transit' in s or 'custom' in s %}
+      {% set is_hold = 'hold' in s or 'pending verification' in s %}
+      {% set is_transit = 'transit' in s %}
       {% set is_picked = ('picked up' in s) or is_transit or is_hold or is_out or is_delivered %}
 
       <div class="steps-wrap">
         <div class="steps">
           <div class="step done">Created</div>
           <div class="step {{ 'done' if is_picked else 'active' }}">Picked Up</div>
-          <div class="step {{ 'done' if is_out or is_delivered else ('active' if is_transit else '') }}">In Transit</div>
+          <div class="step {{ 'done' if is_out or is_delivered else ('active' if is_transit or is_hold else '') }}">In Transit</div>
           <div class="step {{ 'active' if is_out else ('done' if is_delivered else '') }}">Out for Delivery</div>
           <div class="step {{ 'done' if is_delivered else '' }}">Delivered</div>
         </div>
@@ -344,39 +416,38 @@
 
     <div id="map"></div>
 
-    <!-- Expandable Travel History -->
     <div class="timeline">
-      <h2 onclick="toggleHistory()">📍 Travel / Shipment History ▼</h2>
-      
-      <div id="history-content" class="timeline-content">
-        <div class="history">
-          {% if events and events|length > 0 %}
-            {% for event in events %}
-              {% set is_latest = loop.last %}
-              {% set loc = event.location or 'System' %}
+      <h2>Shipment History</h2>
 
+      <div class="history">
+        {% if events and events|length > 0 %}
+          {% for event in events %}
+            <!-- Only show manually entered travel updates (no system/admin update) -->
+            {% if event.location != 'Admin Update' and event.location != 'System' and event.location != 'Shipment Update' %}
               <div class="event">
-                <div class="icon {{ 'current' if is_latest else 'done' }}">
-                  {% if is_latest %}→{% else %}✓{% endif %}
+                <div class="icon {{ 'current' if loop.last else 'done' }}">
+                  {% if loop.last %}●{% else %}✓{% endif %}
                 </div>
 
                 <div>
                   <div class="event-head">
                     <div class="event-date">{{ event.date }}</div>
-                    <div class="event-pill">{{ loc }}</div>
+                    <div class="event-time">{{ event.time or '' }}</div>
                   </div>
                   <div class="event-desc">{{ event.description }}</div>
+                  <div class="event-location">{{ event.location or '' }}</div>
+                  <div class="event-city">{{ event.current_city or '' }}</div>
                 </div>
               </div>
-            {% endfor %}
-          {% else %}
-            <p>No travel history yet.</p>
-          {% endif %}
-        </div>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <p>No travel history yet.</p>
+        {% endif %}
       </div>
     </div>
 
-    <!-- Fees Section -->
+    <!-- Improved Fees Section -->
     {% if fees and fees.amount is not none %}
       <div class="fees">
         <h3 style="margin:0 0 8px; color:#6b4a00;">Customs & Taxes</h3>
@@ -387,6 +458,7 @@
 
           {% if fees.payment_submitted %}
             <p style="margin:6px 0;"><b>Status:</b> Payment Submitted — Pending Verification</p>
+            <p style="margin:6px 0;">Your payment is being verified. Once confirmed, the shipment will be released.</p>
           {% elif fees.paid %}
             <p style="margin:6px 0; color:#1f8f4e;"><b>✅ Fees Paid</b></p>
           {% else %}
@@ -396,7 +468,7 @@
 
         {% else %}
           <p style="margin:6px 0;">
-            Package held for customs fees — <a href="/login" style="font-weight:900;">log in</a> to continue.
+            Package held for customs fees — <a href="/login" style="font-weight:900;">log in</a> to continue and take further action.
           </p>
         {% endif %}
       </div>
@@ -409,21 +481,17 @@
   </div>
 
   <script>
-    // Auto-hide notice
+    // Auto-hide notice after 10 seconds
     setTimeout(function() {
       var notice = document.getElementById("notice");
       if (notice) {
         notice.style.transition = "opacity 0.8s ease";
         notice.style.opacity = "0";
-        setTimeout(function() { notice.style.display = "none"; }, 800);
+        setTimeout(function() {
+          notice.style.display = "none";
+        }, 800);
       }
     }, 10000);
-
-    // Toggle Travel History
-    function toggleHistory() {
-      var content = document.getElementById("history-content");
-      content.style.display = (content.style.display === "block") ? "none" : "block";
-    }
 
     // Map script
     var map = L.map('map').setView([0, 0], 2);
