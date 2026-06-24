@@ -311,7 +311,7 @@ textarea{resize:vertical}
   <div>
     <div class="card">
       <h2>Existing Shipments</h2>
-      <p class="muted">Admin can edit status & fees for any shipment (even Delivered).</p>
+      <p class="muted">Admin can edit status, current location, fees and add progress notes.</p>
 
       {% if shipments %}
         <ul class="list">
@@ -341,7 +341,6 @@ textarea{resize:vertical}
                     <div class="pill pill-paid">Fees Paid</div>
                   {% endif %}
 
-                  <!--  UPDATED: Added Open Chat link -->
                   <div class="small" style="margin-top:8px; display:flex; gap:14px; flex-wrap:wrap;">
                     <a href="/track?tracking_id={{ ship.tracking_id }}">View tracking</a>
                     <a href="/admin/chat/{{ ship.tracking_id }}" style="font-weight:900;">Open chat</a>
@@ -367,11 +366,9 @@ textarea{resize:vertical}
                       <option value="In Transit">In Transit</option>
                       <option value="Arrived at Destination Country">Arrived at Destination Country</option>
 
-                      <!--  ADDED (as requested) -->
                       <option value="Clearance Update">Clearance Update</option>
                       <option value="Clearance Process Successful">Clearance Process Successful</option>
                       <option value="Awaiting Dispatch">Awaiting Dispatch</option>
-                      <!--  END ADDED -->
 
                       <option value="Out for Delivery">Out for Delivery</option>
                       <option value="Delivered">Delivered</option>
@@ -380,6 +377,13 @@ textarea{resize:vertical}
                       <option value="Custom Status">Custom Status</option>
                     </select>
                     <div class="small">Choose “Custom Status” then type below.</div>
+                  </div>
+
+                  <div>
+                    <label>Current Location (JSON)</label>
+                    <input type="text" name="current_location" 
+                           value='{{ ship.current_location | tojson if ship.current_location else "" }}'
+                           placeholder='{"lat":48.8566,"lng":2.3522,"label":"Paris Hub"}'>
                   </div>
 
                   <div>
@@ -409,6 +413,14 @@ textarea{resize:vertical}
                   <div class="full">
                     <label>If “Custom Status”, type here</label>
                     <input type="text" name="custom_status" placeholder="e.g. Held at Sorting Facility">
+                  </div>
+
+                  <!-- New Field Added -->
+                  <div class="full">
+                    <label><strong>Current Progress / Note</strong><br>
+                    <small>This will appear in Shipment History on tracking page</small></label>
+                    <textarea name="progress_note" rows="3" 
+                              placeholder="Package arrived at Paris hub. Clearance in progress. Expected release in 48 hours..."></textarea>
                   </div>
 
                   <div class="full">
@@ -441,5 +453,4 @@ textarea{resize:vertical}
 
 </div>  </div>
 </body>
-</html> 
-
+</html>
