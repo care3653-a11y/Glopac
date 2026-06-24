@@ -168,9 +168,10 @@ textarea{resize:vertical}
   <div class="wrap">
     <div class="grid">
 
-  <!-- LEFT - Applications -->
+  <!-- LEFT -->
   <div>
 
+    <!-- Applications -->
     <div class="card">
       <h2>New Applications</h2>
       <p class="muted">Approve to create a user account and assign a plain password. Reject to decline.</p>
@@ -229,13 +230,13 @@ textarea{resize:vertical}
 
   </div>
 
-  <!-- RIGHT - 3 Main Forms -->
+  <!-- RIGHT: 3 Main Sections -->
   <div>
 
-    <!-- 1. Create New Shipment -->
+    <!-- SECTION 1: Create New Shipment -->
     <div class="card">
       <h2>1. Create New Shipment</h2>
-      <p class="muted">Basic shipment information (fees removed)</p>
+      <p class="muted">Basic shipment details (fees removed - use Customs section for fees)</p>
 
       <form action="/admin" method="post">
         <input type="hidden" name="form_type" value="shipment">
@@ -285,48 +286,45 @@ textarea{resize:vertical}
       </form>
     </div>
 
-    <!-- 2. Travel History Update -->
+    <!-- SECTION 2: Travel History Update -->
     <div class="card">
       <h2>2. Travel History Update</h2>
-      <p class="muted">Select shipment and add travel update</p>
+      <p class="muted">Select a shipment and add progress update</p>
 
       <label>Select Shipment</label>
       <select id="travel-select" style="margin-bottom:15px;width:100%;">
-        <option value="">-- Select Shipment --</option>
+        <option value="">-- Choose Shipment --</option>
         {% for ship in shipments %}
           <option value="{{ ship.tracking_id }}">{{ ship.owner_email }} — {{ ship.tracking_id }}</option>
         {% endfor %}
       </select>
 
-      <div id="travel-form" style="display:none;">
-        <form action="/admin/update/{{ ship.tracking_id }}" method="post" id="travel-update-form">
+      <div id="travel-form-area" style="display:none;">
+        <form action="/admin/update/TRACKING_ID" method="post" id="travel-form">
           <label>Date & Time</label>
           <input type="datetime-local" name="update_datetime" required>
 
-          <label>Activity</label>
-          <textarea name="progress_note" rows="3" placeholder="Package cleared customs and moving forward..."></textarea>
+          <label>Activity (Main Update)</label>
+          <textarea name="progress_note" rows="3" placeholder="Package cleared customs and is moving to next hub..."></textarea>
 
-          <label>Location</label>
+          <label>Location / Hub</label>
           <input type="text" name="update_location" placeholder="e.g. Paris Sorting Hub">
 
-          <label>Current City</label>
-          <input type="text" name="current_city" placeholder="e.g. Paris, France">
-
-          <button class="btn btn-good" type="submit">Add Travel Update</button>
-          <a href="#" id="view-travel" class="btn" target="_blank">View Shipment</a>
-          <a href="#" id="msg-travel" class="btn">Message Customer</a>
+          <button class="btn btn-good" type="submit">Add Update</button>
+          <a href="/track?tracking_id=SELECTED" id="view-btn-travel" class="btn" target="_blank">View Shipment</a>
+          <a href="/admin/chat/SELECTED" id="msg-btn-travel" class="btn">Message Customer</a>
         </form>
       </div>
     </div>
 
-    <!-- 3. Customs & Fees -->
+    <!-- SECTION 3: Customs & Fees -->
     <div class="card">
       <h2>3. Customs & Fees</h2>
-      <p class="muted">Select shipment and activate customs hold</p>
+      <p class="muted">Activate only when needed</p>
 
       <label>Select Shipment</label>
       <select id="customs-select" style="margin-bottom:15px;width:100%;">
-        <option value="">-- Select Shipment --</option>
+        <option value="">-- Choose Shipment --</option>
         {% for ship in shipments %}
           <option value="{{ ship.tracking_id }}">{{ ship.owner_email }} — {{ ship.tracking_id }}</option>
         {% endfor %}
@@ -334,8 +332,8 @@ textarea{resize:vertical}
 
       <label><input type="checkbox" id="activate-customs"> Activate Customs / Fee Hold</label>
 
-      <div id="customs-form" style="display:none;">
-        <form action="/admin/update/{{ ship.tracking_id }}" method="post" id="customs-update-form">
+      <div id="customs-form-area" style="display:none;">
+        <form action="/admin/update/TRACKING_ID" method="post" id="customs-form">
           <label>Fee Amount</label>
           <input type="number" step="0.01" name="fees_amount" placeholder="e.g. 125.00">
 
@@ -346,8 +344,8 @@ textarea{resize:vertical}
           <input type="date" name="estimated_delivery">
 
           <button class="btn btn-warn" type="submit">Apply Customs Hold</button>
-          <a href="#" id="view-customs" class="btn" target="_blank">View Shipment</a>
-          <a href="#" id="msg-customs" class="btn">Message Customer</a>
+          <a href="/track?tracking_id=SELECTED" id="view-btn-customs" class="btn" target="_blank">View Shipment</a>
+          <a href="/admin/chat/SELECTED" id="msg-btn-customs" class="btn">Message Customer</a>
         </form>
       </div>
     </div>
@@ -357,28 +355,24 @@ textarea{resize:vertical}
 </div>  </div>
 
 <script>
-  // Show Travel Form when shipment selected
-  document.getElementById('travel-select').addEventListener('change', function() {
-    const form = document.getElementById('travel-form');
-    if (this.value) {
-      form.style.display = 'block';
-      document.getElementById('view-travel').href = `/track?tracking_id=${this.value}`;
-      document.getElementById('msg-travel').href = `/admin/chat/${this.value}`;
-    }
-  });
+  // Simple JS for showing forms and updating buttons
+  function updateButtons(selectId, formId, viewId, msgId) {
+    const select = document.getElementById(selectId);
+    select.addEventListener('change', function() {
+      const area = document.getElementById(formId);
+      if (this.value) {
+        area.style.display = 'block';
+        document.getElementById(viewId).href = `/track?tracking_id=${this.value}`;
+        document.getElementById(msgId).href = `/admin/chat/${this.value}`;
+      }
+    });
+  }
 
-  // Show Customs Form when checkbox ticked
+  updateButtons('travel-select', 'travel-form-area', 'view-btn-travel', 'msg-btn-travel');
+  updateButtons('customs-select', 'customs-form-area', 'view-btn-customs', 'msg-btn-customs');
+
   document.getElementById('activate-customs').addEventListener('change', function() {
-    const form = document.getElementById('customs-form');
-    form.style.display = this.checked ? 'block' : 'none';
-  });
-
-  // Customs select change
-  document.getElementById('customs-select').addEventListener('change', function() {
-    if (this.value) {
-      document.getElementById('view-customs').href = `/track?tracking_id=${this.value}`;
-      document.getElementById('msg-customs').href = `/admin/chat/${this.value}`;
-    }
+    document.getElementById('customs-form-area').style.display = this.checked ? 'block' : 'none';
   });
 </script>
 
