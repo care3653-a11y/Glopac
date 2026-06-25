@@ -205,94 +205,24 @@ def add_status_event_if_changed(shipment: dict, old_status: str, new_status: str
 
 
 # -----------------------
-# ✅ AUTO SHIPMENT HISTORY (milestones)
+# ✅ AUTO SHIPMENT HISTORY - COMPLETELY DISABLED
+# Only manual updates from Travel History form will show
 # -----------------------
-def _event_key_list(shipment: dict):
-    shipment.setdefault("_auto_event_keys", [])
-    if not isinstance(shipment["_auto_event_keys"], list):
-        shipment["_auto_event_keys"] = []
-    return shipment["_auto_event_keys"]
 
+def _event_key_list(shipment: dict):
+    return []  # Disabled
 
 def add_auto_event_once(shipment: dict, key: str, location: str, description: str) -> bool:
-    if not isinstance(shipment, dict) or not key:
-        return False
-
-    keys = _event_key_list(shipment)
-    if key in keys:
-        return False
-
-    shipment.setdefault("events", [])
-    if not isinstance(shipment["events"], list):
-        shipment["events"] = []
-
-    shipment["events"].append({
-        "date": now_str(),
-        "location": location,
-        "description": description
-    })
-    keys.append(key)
-    return True
-
+    return False  # Disabled - no automatic events
 
 def normalize_status_bucket(status: str) -> str:
-    s = (status or "").strip().lower()
-    if "delivered" in s:
-        return "delivered"
-    if "out for delivery" in s:
-        return "out_for_delivery"
-    if "transit" in s:
-        return "in_transit"
-    if "picked up" in s:
-        return "picked_up"
-    if "hold" in s or "pending verification" in s:
-        return "on_hold"
-    if "created" in s:
-        return "created"
-    return "other"
-
+    return "other"  # Disabled
 
 def ensure_auto_history(shipment: dict) -> bool:
-    changed = False
-    if not isinstance(shipment, dict):
-        return False
-
-    status = shipment.get("status", "Unknown")
-    bucket = normalize_status_bucket(status)
-
-    changed |= add_auto_event_once(
-        shipment,
-        "milestone_created",
-        "System",
-        "Shipment record created"
-    )
-
-    if bucket == "picked_up":
-        changed |= add_auto_event_once(shipment, "milestone_picked_up", "Carrier Scan", "Shipment picked up")
-    elif bucket == "in_transit":
-        changed |= add_auto_event_once(shipment, "milestone_in_transit", "Transit Hub", "Shipment is in transit")
-    elif bucket == "out_for_delivery":
-        changed |= add_auto_event_once(shipment, "milestone_out_for_delivery", "Destination Facility", "Out for delivery")
-    elif bucket == "delivered":
-        changed |= add_auto_event_once(shipment, "milestone_delivered", "Delivered", "Shipment delivered successfully")
-    elif bucket == "on_hold":
-        changed |= add_auto_event_once(shipment, "milestone_on_hold", "Customs / Compliance", "Shipment placed on hold")
-
-    return changed
-
+    return False  # Disabled - only manual admin input will appear
 
 def add_estimated_delivery_event_if_changed(shipment: dict, old_est: str, new_est: str) -> bool:
-    old_est = (old_est or "").strip()
-    new_est = (new_est or "").strip()
-
-    if old_est == new_est:
-        return False
-
-    key = f"estimated_delivery:{new_est or 'cleared'}"
-    if new_est:
-        return add_auto_event_once(shipment, key, "Shipment Update", f"Estimated delivery set: {new_est}")
-    else:
-        return add_auto_event_once(shipment, key, "Shipment Update", "Estimated delivery cleared")
+    return False  # Disabled
 
 
 # -----------------------
@@ -673,7 +603,7 @@ def my_shipments_alias():
 
 
 # -----------------------
-# Tracking
+# Tracking - Only Manual Events
 # -----------------------
 @app.route("/track", methods=["GET", "POST"])
 def track():
@@ -691,24 +621,15 @@ def track():
     if not shipment:
         return render_template("index.html", error="Tracking ID not found", user=current_user())
 
-    changed = ensure_auto_history(shipment)
+    # === NO AUTO HISTORY ===
+    # Remove ensure_auto_history and any changed saving
 
     route = shipment.get("route") or []
     if not isinstance(route, list):
         route = []
 
-    if not shipment.get("current_location") and route:
-        last = route[-1]
-        if isinstance(last, dict) and "lat" in last and "lng" in last:
-            shipment["current_location"] = {"lat": last["lat"], "lng": last["lng"]}
-            changed = True
-
-    if changed:
-        shipments[tracking_id] = shipment
-        save_json(SHIPMENTS_FILE, shipments)
-
     current_location = shipment.get("current_location")
-    events = sort_events(shipment.get("events", []))
+    events = shipment.get("events", [])   # Only manual events
 
     u = current_user()
     logged = is_logged_in()
@@ -736,8 +657,6 @@ def track():
                 fees_visible = fees
         else:
             fees_visible = fees
-    else:
-        fees_visible = None
 
     est = shipment.get("estimated_delivery")
     est_tbd = bool(shipment.get("estimated_delivery_tbd_on_hold", False))
@@ -1092,9 +1011,6 @@ def admin_panel():
     return render_template("admin.html", user=current_user(), shipments=ship_list, applications=app_list)
 
 
-# -----------------------
-# Admin inline update route (UPDATED)
-# -----------------------
 @app.route("/admin/update/<tracking_id>", methods=["POST"])
 def admin_update_shipment(tracking_id):
     gate = require_admin(next_url=url_for("admin_panel"))
@@ -1106,17 +1022,17 @@ def admin_update_shipment(tracking_id):
     if not shipment:
         return redirect(url_for("admin_panel"))
 
-    old_status = shipment.get("status", "")
-    old_est = shipment.get("estimated_delivery")
-
-    # === Get form data ===
+    # Get form data
     status = (request.form.get("status") or "").strip()
     custom_status = (request.form.get("custom_status") or "").strip()
     if status == "Custom Status" and custom_status:
         status = custom_status
 
     progress_note = (request.form.get("progress_note") or "").strip()
-    update_location = (request.form.get("update_location") or "").strip()   # ← New
+    update_location = (request.form.get("update_location") or "").strip()
+    current_city = (request.form.get("current_city") or "").strip()
+    update_datetime = (request.form.get("update_datetime") or now_str())
+
     current_location_raw = (request.form.get("current_location") or "").strip()
 
     fees_amount_raw = request.form.get("fees_amount")
@@ -1126,15 +1042,7 @@ def admin_update_shipment(tracking_id):
     estimated_delivery = (request.form.get("estimated_delivery") or "").strip()
     estimated_delivery_tbd = request.form.get("estimated_delivery_tbd_on_hold") == "on"
 
-    origin = (request.form.get("origin") or "").strip()
-    destination = (request.form.get("destination") or "").strip()
-
-    # === Apply updates ===
-    if origin:
-        shipment["origin"] = origin
-    if destination:
-        shipment["destination"] = destination
-
+    # Apply updates
     if status:
         shipment["status"] = status
 
@@ -1144,7 +1052,7 @@ def admin_update_shipment(tracking_id):
     elif estimated_delivery:
         shipment["estimated_delivery"] = estimated_delivery
 
-    # Current Location (for map)
+    # Current location for map
     if current_location_raw:
         try:
             cl = json.loads(current_location_raw)
@@ -1153,29 +1061,19 @@ def admin_update_shipment(tracking_id):
         except Exception:
             pass
 
-    # Progress Note with Custom Location (This is what you asked for)
+    # ONLY MANUAL TRAVEL HISTORY - No "Admin Update"
     if progress_note:
-        location_name = update_location if update_location else "Admin Update"
-        shipment.setdefault("events", []).append({
-            "date": now_str(),
-            "location": location_name,          # ← Shows "Paris Hub" etc.
+        event = {
+            "date": update_datetime.split("T")[0] if "T" in update_datetime else update_datetime,
+            "time": update_datetime.split("T")[1] if "T" in update_datetime else "",
+            "location": update_location or "Unknown Location",
+            "current_city": current_city,
             "description": progress_note
-        })
+        }
+        shipment.setdefault("events", []).append(event)
 
     # Fees
-    apply_fees_logic(shipment, shipment.get("status", ""), fees_amount_raw, fees_reason_raw, clear_fees)
-
-    # Auto features
-    existing_snapshot = shipments.get(tracking_id, {}) or {}
-    if should_regenerate_route(existing_snapshot, shipment):
-        shipment["route"] = generate_route(shipment.get("origin"), shipment.get("destination"))
-
-    add_status_event_if_changed(shipment, old_status, shipment.get("status", ""))
-
-    new_est = shipment.get("estimated_delivery") or ""
-    add_estimated_delivery_event_if_changed(shipment, old_est or "", new_est)
-
-    ensure_auto_history(shipment)
+    apply_fees_logic(shipment, status, fees_amount_raw, fees_reason_raw, clear_fees)
 
     shipments[tracking_id] = shipment
     save_json(SHIPMENTS_FILE, shipments)
