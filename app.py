@@ -1009,7 +1009,7 @@ def admin_update_shipment(tracking_id):
     if not shipment:
         return redirect(url_for("admin_panel"))
 
-    # Get form data
+    # === Get data from ALL forms ===
     status = (request.form.get("status") or "").strip()
     custom_status = (request.form.get("custom_status") or "").strip()
     if status == "Custom Status" and custom_status:
@@ -1029,17 +1029,18 @@ def admin_update_shipment(tracking_id):
     estimated_delivery = (request.form.get("estimated_delivery") or "").strip()
     estimated_delivery_tbd = request.form.get("estimated_delivery_tbd_on_hold") == "on"
 
-    # Apply updates
+    # === 1. Update Main Status (Form 4) ===
     if status:
         shipment["status"] = status
 
+    # === 2. Estimated Delivery ===
     shipment["estimated_delivery_tbd_on_hold"] = bool(estimated_delivery_tbd)
     if estimated_delivery_tbd:
         shipment["estimated_delivery"] = None
     elif estimated_delivery:
         shipment["estimated_delivery"] = estimated_delivery
 
-    # Current location for map
+    # === 3. Current Location for Map ===
     if current_location_raw:
         try:
             cl = json.loads(current_location_raw)
@@ -1048,7 +1049,7 @@ def admin_update_shipment(tracking_id):
         except Exception:
             pass
 
-    # ONLY MANUAL TRAVEL HISTORY - No "Admin Update"
+    # === 4. Travel History Update (Form 2) ===
     if progress_note:
         event = {
             "date": update_datetime.split("T")[0] if "T" in update_datetime else update_datetime,
@@ -1059,9 +1060,27 @@ def admin_update_shipment(tracking_id):
         }
         shipment.setdefault("events", []).append(event)
 
-    # Fees
-    apply_fees_logic(shipment, status, fees_amount_raw, fees_reason_raw, clear_fees)
+    # === 5. Customs & Fees (Form 3) - FIXED ===
+    if fees_amount_raw:
+        try:
+            amount = float(fees_amount_raw)
+            if amount > 0:
+                shipment["fees"] = {
+                    "amount": amount,
+                    "reason": (fees_reason_raw or "Customs and Taxes").strip(),
+                    "paid": False,
+                    "payment_submitted": False
+                }
+                # Auto-set status to On Hold when fees are added
+                if "hold" not in shipment.get("status", "").lower():
+                    shipment["status"] = "On Hold"
+        except:
+            pass
 
+    if clear_fees:
+        shipment.pop("fees", None)
+
+    # Save everything
     shipments[tracking_id] = shipment
     save_json(SHIPMENTS_FILE, shipments)
     return redirect(url_for("admin_panel"))
