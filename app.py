@@ -603,7 +603,7 @@ def my_shipments_alias():
 
 
 # -----------------------
-# Tracking - Only Manual Events
+# Tracking - Clean Version (Manual Status + Manual History Only)
 # -----------------------
 @app.route("/track", methods=["GET", "POST"])
 def track():
@@ -621,15 +621,10 @@ def track():
     if not shipment:
         return render_template("index.html", error="Tracking ID not found", user=current_user())
 
-    # === NO AUTO HISTORY ===
-    # Remove ensure_auto_history and any changed saving
-
-    route = shipment.get("route") or []
-    if not isinstance(route, list):
-        route = []
-
-    current_location = shipment.get("current_location")
-    events = shipment.get("events", [])   # Only manual events
+    # Only manual events - no automatic updates
+    events = shipment.get("events", [])
+    if not isinstance(events, list):
+        events = []
 
     u = current_user()
     logged = is_logged_in()
@@ -640,48 +635,40 @@ def track():
     is_owner = logged and owner_email and (viewer_email == owner_email)
 
     fees = shipment.get("fees")
-    display_status = shipment.get("status", "Unknown")
-    can_view_sensitive = admin or is_owner
+    status = shipment.get("status", "No Status Yet")
 
+    # Fees visibility logic
     fees_visible = None
     if fees and isinstance(fees, dict):
         if not fees.get("paid", False):
-            if not can_view_sensitive:
-                display_status = "Package held for customs fees — log in to continue and take further action"
+            if not (admin or is_owner):
+                status = "Package held for customs fees — log in to continue"
                 fees_visible = {"exists": True, "paid": False, "amount": fees.get("amount"), "reason": fees.get("reason")}
             else:
-                if fees.get("payment_submitted"):
-                    display_status = "Payment Submitted - Pending Verification"
-                else:
-                    display_status = "On Hold for Customs/Taxes Payment"
                 fees_visible = fees
         else:
             fees_visible = fees
 
     est = shipment.get("estimated_delivery")
-    est_tbd = bool(shipment.get("estimated_delivery_tbd_on_hold", False))
-    if est_tbd:
+    if bool(shipment.get("estimated_delivery_tbd_on_hold", False)):
         est = "Date will be made available when hold clears"
 
     return render_template(
         "track.html",
         user=u,
-        logged_in=logged,
-        is_admin=admin,
-        is_owner=is_owner,
-        owner_email=owner_email,
         tracking_id=tracking_id,
-        status=display_status,
+        status=status,                    # ← This now comes directly from admin
         estimated_delivery=est,
         origin=shipment.get("origin"),
         destination=shipment.get("destination"),
         package_details=shipment.get("package_details"),
-        route=route,
-        current_location=current_location,
-        events=events,
+        route=shipment.get("route", []),
+        current_location=shipment.get("current_location"),
+        events=events,                    # Only manual events
         fees=fees_visible,
+        is_owner=is_owner,
+        is_admin=admin
     )
-
 
 # -----------------------
 # Payment page
