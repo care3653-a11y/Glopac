@@ -230,17 +230,31 @@ textarea{resize:vertical}
 
   </div>
 
-   <!-- RIGHT: 4 Main Sections -->
+  <!-- RIGHT: 4 Main Sections -->
   <div>
 
-    <!-- 1. Create New Shipment (unchanged) -->
+    <!-- 1. Create New Shipment -->
     <div class="card">
       <h2>1. Create New Shipment</h2>
       <p class="muted">Basic shipment details</p>
 
       <form action="/admin" method="post">
         <input type="hidden" name="form_type" value="shipment">
-        <!-- ... your existing create form fields ... -->
+
+        <label>Tracking ID</label>
+        <input type="text" name="tracking_id" required placeholder="e.g. BOE808080">
+
+        <div class="two">
+          <div>
+            <label>Status</label>
+            <input type="text" name="status" required placeholder="e.g. In Transit">
+          </div>
+          <div>
+            <label>Owner Email</label>
+            <input type="email" name="owner_email">
+          </div>
+        </div>
+
         <button class="btn" type="submit">Create Shipment</button>
       </form>
     </div>
@@ -259,7 +273,7 @@ textarea{resize:vertical}
       </select>
 
       <div id="travel-form-area" style="display:none;">
-        <form action="/admin/update/{{ ship.tracking_id }}" method="post" id="travel-form">   <!-- Fixed -->
+        <form action="" method="post" id="travel-form">
           <label>Date & Time</label>
           <input type="datetime-local" name="update_datetime" required>
 
@@ -294,7 +308,7 @@ textarea{resize:vertical}
       <label><input type="checkbox" id="activate-customs"> Activate Customs / Fee Hold</label>
 
       <div id="customs-form-area" style="display:none;">
-        <form action="/admin/update/{{ ship.tracking_id }}" method="post" id="customs-form">   <!-- Fixed -->
+        <form action="" method="post" id="customs-form">
           <label>Fee Amount</label>
           <input type="number" step="0.01" name="fees_amount">
 
@@ -324,7 +338,7 @@ textarea{resize:vertical}
       </select>
 
       <div id="progress-form-area" style="display:none;">
-        <form action="/admin/update/{{ ship.tracking_id }}" method="post" id="progress-form">   <!-- Fixed -->
+        <form action="" method="post" id="progress-form">
           <label>New Status (this appears on tracking progress)</label>
           <input type="text" name="status" placeholder="e.g. In Transit, Customs Clearance, Delivered" required>
 
@@ -342,13 +356,18 @@ textarea{resize:vertical}
 </div>  </div>
 
 <script>
-  function updateButtons(selectId, formId, viewId) {
+  function setupForm(selectId, formId, viewId) {
     const select = document.getElementById(selectId);
     if (!select) return;
+
     select.addEventListener('change', function() {
       const area = document.getElementById(formId);
       if (this.value) {
         area.style.display = 'block';
+        const form = document.getElementById(formId).querySelector('form');
+        if (form) {
+          form.action = `/admin/update/${this.value}`;
+        }
         if (viewId) {
           document.getElementById(viewId).href = `/track?tracking_id=${this.value}`;
         }
@@ -356,9 +375,9 @@ textarea{resize:vertical}
     });
   }
 
-  updateButtons('travel-select', 'travel-form-area', 'view-btn-travel');
-  updateButtons('customs-select', 'customs-form-area', 'view-btn-customs');
-  updateButtons('progress-select', 'progress-form-area', 'view-btn-progress');
+  setupForm('travel-select', 'travel-form-area', 'view-btn-travel');
+  setupForm('customs-select', 'customs-form-area', 'view-btn-customs');
+  setupForm('progress-select', 'progress-form-area', 'view-btn-progress');
 
   document.getElementById('activate-customs').addEventListener('change', function() {
     document.getElementById('customs-form-area').style.display = this.checked ? 'block' : 'none';
