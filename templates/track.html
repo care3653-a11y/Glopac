@@ -370,28 +370,26 @@
       </div>
     </div>
 
-    <!-- Fees Section -->
+    <!-- Fees / Customs Section -->
     {% if fees and fees.amount is not none %}
       <div class="fees">
-        <h3 style="margin:0 0 8px; color:#6b4a00;">Customs & Taxes</h3>
+        <h3 style="margin:0 0 8px; color:#6b4a00;">Customs & Taxes Hold</h3>
 
         {% if is_owner or is_admin %}
-          <p style="margin:6px 0;"><b>Amount:</b> ${{ fees.amount | round(2) }}</p>
-          <p style="margin:6px 0;"><b>Reason:</b> {{ fees.reason or "Customs and Taxes" }}</p>
+          <p><b>Amount:</b> ${{ fees.amount | round(2) }}</p>
+          <p><b>Reason:</b> {{ fees.reason or "Customs and Taxes" }}</p>
 
-          {% if fees.payment_submitted %}
-            <p style="margin:6px 0;"><b>Status:</b> Payment Submitted — Pending Verification</p>
+          {% if fees.payment_submitted and not fees.paid %}
+            <p><b>Status:</b> Payment Submitted — Awaiting Verification</p>
           {% elif fees.paid %}
-            <p style="margin:6px 0; color:#1f8f4e;"><b>✅ Fees Paid</b></p>
+            <p style="color:#1f8f4e;"><b>✅ Fees Paid - Released</b></p>
           {% else %}
-            <p style="margin:6px 0;">Your shipment is on hold until payment is submitted.</p>
-            <a href="/pay/{{ tracking_id }}" class="pay-btn">Submit Payment</a>
+            <p><b>Status:</b> On Hold - Payment Required</p>
+            <a href="/pay/{{ tracking_id }}" class="pay-btn">Submit Payment Now</a>
           {% endif %}
 
         {% else %}
-          <p style="margin:6px 0;">
-            Package held for customs fees — <a href="/login" style="font-weight:900;">log in</a> to continue.
-          </p>
+          <p>Package is held for customs fees. <a href="/login" style="font-weight:900;">Log in</a> to view details and pay.</p>
         {% endif %}
       </div>
     {% endif %}
