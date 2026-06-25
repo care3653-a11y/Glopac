@@ -230,13 +230,13 @@ textarea{resize:vertical}
 
   </div>
 
-  <!-- RIGHT: 4 Main Sections -->
+   <!-- RIGHT: 4 Main Sections -->
   <div>
 
-    <!-- 1. Create New Shipment -->
+    <!-- 1. Create New Shipment (Now Complete) -->
     <div class="card">
       <h2>1. Create New Shipment</h2>
-      <p class="muted">Basic shipment details</p>
+      <p class="muted">Basic shipment details (fees removed)</p>
 
       <form action="/admin" method="post">
         <input type="hidden" name="form_type" value="shipment">
@@ -247,11 +247,38 @@ textarea{resize:vertical}
         <div class="two">
           <div>
             <label>Status</label>
-            <input type="text" name="status" required placeholder="e.g. In Transit">
+            <input type="text" name="status" required placeholder="e.g. Shipment Created, In Transit">
           </div>
           <div>
             <label>Owner Email</label>
-            <input type="email" name="owner_email">
+            <input type="email" name="owner_email" placeholder="customer@email.com">
+          </div>
+        </div>
+
+        <div class="two">
+          <div>
+            <label>Origin</label>
+            <input type="text" name="origin" placeholder="e.g. New York, USA">
+          </div>
+          <div>
+            <label>Destination</label>
+            <input type="text" name="destination" placeholder="e.g. London, UK">
+          </div>
+        </div>
+
+        <label>Package Details</label>
+        <input type="text" name="package_details" placeholder="e.g. Electronics - 2kg">
+
+        <div class="two">
+          <div>
+            <label>Expected Delivery Date</label>
+            <input type="date" name="estimated_delivery">
+          </div>
+          <div>
+            <label>
+              <input type="checkbox" name="estimated_delivery_tbd_on_hold" style="width:auto;margin-right:8px;">
+              Date available when hold clears
+            </label>
           </div>
         </div>
 
@@ -262,7 +289,7 @@ textarea{resize:vertical}
     <!-- 2. Travel History Update -->
     <div class="card">
       <h2>2. Travel History Update</h2>
-      <p class="muted">Add movement / progress</p>
+      <p class="muted">Add movement details</p>
 
       <label>Select Shipment</label>
       <select id="travel-select" style="margin-bottom:15px;width:100%;">
@@ -278,7 +305,7 @@ textarea{resize:vertical}
           <input type="datetime-local" name="update_datetime" required>
 
           <label>Activity</label>
-          <textarea name="progress_note" rows="3" placeholder="Package arrived at..."></textarea>
+          <textarea name="progress_note" rows="3" placeholder="Package arrived at facility..."></textarea>
 
           <label>Location / Hub</label>
           <input type="text" name="update_location" placeholder="e.g. Paris Sorting Hub">
@@ -288,6 +315,7 @@ textarea{resize:vertical}
 
           <button class="btn btn-good" type="submit">Add Travel Update</button>
           <a href="#" id="view-btn-travel" class="btn" target="_blank">View Shipment</a>
+          <a href="#" id="msg-btn-travel" class="btn">Message Customer</a>
         </form>
       </div>
     </div>
@@ -295,7 +323,7 @@ textarea{resize:vertical}
     <!-- 3. Customs & Fees -->
     <div class="card">
       <h2>3. Customs & Fees</h2>
-      <p class="muted">Activate only when needed</p>
+      <p class="muted">Activate when needed</p>
 
       <label>Select Shipment</label>
       <select id="customs-select" style="margin-bottom:15px;width:100%;">
@@ -310,16 +338,17 @@ textarea{resize:vertical}
       <div id="customs-form-area" style="display:none;">
         <form action="" method="post" id="customs-form">
           <label>Fee Amount</label>
-          <input type="number" step="0.01" name="fees_amount">
+          <input type="number" step="0.01" name="fees_amount" placeholder="125.00">
 
           <label>Fee Reason</label>
-          <input type="text" name="fees_reason">
+          <input type="text" name="fees_reason" placeholder="Customs and Taxes">
 
-          <label>New Expected Delivery</label>
+          <label>New Expected Delivery Date</label>
           <input type="date" name="estimated_delivery">
 
           <button class="btn btn-warn" type="submit">Apply Customs Hold</button>
           <a href="#" id="view-btn-customs" class="btn" target="_blank">View Shipment</a>
+          <a href="#" id="msg-btn-customs" class="btn">Message Customer</a>
         </form>
       </div>
     </div>
@@ -327,7 +356,7 @@ textarea{resize:vertical}
     <!-- 4. Update Shipping Progress -->
     <div class="card">
       <h2>4. Update Shipping Progress</h2>
-      <p class="muted">This controls the main status on tracking page</p>
+      <p class="muted">Controls the main status on tracking page</p>
 
       <label>Select Shipment</label>
       <select id="progress-select" style="margin-bottom:15px;width:100%;">
@@ -339,13 +368,13 @@ textarea{resize:vertical}
 
       <div id="progress-form-area" style="display:none;">
         <form action="" method="post" id="progress-form">
-          <label>New Status (this appears on tracking progress)</label>
+          <label>New Status</label>
           <input type="text" name="status" placeholder="e.g. In Transit, Customs Clearance, Delivered" required>
 
           <label>Note (optional)</label>
           <textarea name="progress_note" rows="2"></textarea>
 
-          <button class="btn btn-good" type="submit">Update Status</button>
+          <button class="btn btn-good" type="submit">Update Progress</button>
           <a href="#" id="view-btn-progress" class="btn" target="_blank">View Shipment</a>
         </form>
       </div>
@@ -356,7 +385,7 @@ textarea{resize:vertical}
 </div>  </div>
 
 <script>
-  function setupForm(selectId, formId, viewId) {
+  function setupForm(selectId, formId, viewId, msgId = null) {
     const select = document.getElementById(selectId);
     if (!select) return;
 
@@ -365,18 +394,22 @@ textarea{resize:vertical}
       if (this.value) {
         area.style.display = 'block';
         const form = document.getElementById(formId).querySelector('form');
-        if (form) {
-          form.action = `/admin/update/${this.value}`;
-        }
+        if (form) form.action = `/admin/update/${this.value}`;
+
         if (viewId) {
-          document.getElementById(viewId).href = `/track?tracking_id=${this.value}`;
+          const viewLink = document.getElementById(viewId);
+          if (viewLink) viewLink.href = `/track?tracking_id=${this.value}`;
+        }
+        if (msgId) {
+          const msgLink = document.getElementById(msgId);
+          if (msgLink) msgLink.href = `/admin/chat/${this.value}`;
         }
       }
     });
   }
 
-  setupForm('travel-select', 'travel-form-area', 'view-btn-travel');
-  setupForm('customs-select', 'customs-form-area', 'view-btn-customs');
+  setupForm('travel-select', 'travel-form-area', 'view-btn-travel', 'msg-btn-travel');
+  setupForm('customs-select', 'customs-form-area', 'view-btn-customs', 'msg-btn-customs');
   setupForm('progress-select', 'progress-form-area', 'view-btn-progress');
 
   document.getElementById('activate-customs').addEventListener('change', function() {
