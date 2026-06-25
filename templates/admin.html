@@ -353,30 +353,73 @@ textarea{resize:vertical}
       </div>
     </div>
 
+        <!-- SECTION 4: Update Shipping Progress -->
+    <div class="card">
+      <h2>4. Update Shipping Progress</h2>
+      <p class="muted">This directly changes the main status shown on the tracking page</p>
+
+      <label>Select Shipment</label>
+      <select id="progress-select" style="margin-bottom:15px;width:100%;">
+        <option value="">-- Choose Shipment --</option>
+        {% for ship in shipments %}
+          <option value="{{ ship.tracking_id }}">{{ ship.owner_email }} — {{ ship.tracking_id }}</option>
+        {% endfor %}
+      </select>
+
+      <div id="progress-form-area" style="display:none;">
+        <form action="/admin/update/TRACKING_ID" method="post" id="progress-form">
+          <label><strong>New Shipping Progress Status</strong></label>
+          <input type="text" name="status" placeholder="e.g. In Transit, On Hold, Customs Clearance, Delivered" required>
+
+          <label>Progress Note (optional)</label>
+          <textarea name="progress_note" rows="2" placeholder="Brief note for this status change..."></textarea>
+
+          <button class="btn btn-good" type="submit">Update Progress Status</button>
+          <a href="/track?tracking_id=SELECTED" id="view-btn-progress" class="btn" target="_blank">View Shipment</a>
+        </form>
+      </div>
+    </div>
+
   </div>
 
 </div>  </div>
 
 <script>
-  // Simple JS for showing forms and updating buttons
+  // Updated JS to handle all 4 forms
   function updateButtons(selectId, formId, viewId, msgId) {
     const select = document.getElementById(selectId);
+    if (!select) return;
+
     select.addEventListener('change', function() {
       const area = document.getElementById(formId);
       if (this.value) {
         area.style.display = 'block';
-        document.getElementById(viewId).href = `/track?tracking_id=${this.value}`;
-        document.getElementById(msgId).href = `/admin/chat/${this.value}`;
+        
+        if (viewId) {
+          const viewLink = document.getElementById(viewId);
+          if (viewLink) viewLink.href = `/track?tracking_id=${this.value}`;
+        }
+        if (msgId) {
+          const msgLink = document.getElementById(msgId);
+          if (msgLink) msgLink.href = `/admin/chat/${this.value}`;
+        }
       }
     });
   }
 
+  // Initialize all forms
   updateButtons('travel-select', 'travel-form-area', 'view-btn-travel', 'msg-btn-travel');
   updateButtons('customs-select', 'customs-form-area', 'view-btn-customs', 'msg-btn-customs');
+  updateButtons('progress-select', 'progress-form-area', 'view-btn-progress', null);  // No message button for progress form
 
-  document.getElementById('activate-customs').addEventListener('change', function() {
-    document.getElementById('customs-form-area').style.display = this.checked ? 'block' : 'none';
-  });
+  // Customs activation checkbox
+  const activateCustoms = document.getElementById('activate-customs');
+  if (activateCustoms) {
+    activateCustoms.addEventListener('change', function() {
+      const form = document.getElementById('customs-form-area');
+      if (form) form.style.display = this.checked ? 'block' : 'none';
+    });
+  }
 </script>
 
 </body>
