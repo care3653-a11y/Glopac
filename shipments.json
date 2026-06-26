@@ -280,42 +280,57 @@
             "lng": -14.6357
         },
         "events": [
-            {
-                "date": "2026-03-02 08:10",
-                "location": "Amsterdam, NED",
-                "description": "Package Received"
-            },
-            {
-                "date": "2026-03-04 20:45",
-                "location": "Amsterdam, NED",
-                "description": "Departed Origin Facility"
-            },
-            {
-                "date": "2026-03-06 06:30",
-                "location": "ostersund, SWE Gateway",
-                "description": "Arrived at Transit Hub"
-            },
-            {
-                "date": "2026-03-07 11:20",
-                "location": "ostersund, SWE Gateway",
-                "description": "In Transit to Destination Country"
-            },
-            {
-                "date": "2026-03-08 10:23",
-                "location": "ostersund, SWE Gateway",
-                "description": "Delayed"
-            },
-            {
-                "date": "2026-03-09 11:30",
-                "location": "ostersund, SWE Gateway",
-                "description": "On Hold Custom"
-            },
-            {
-                "date": "2026-03-11 09:30",
-                "location": "ostersund, SWE Gateway",
-                "description": "Awaiting Custom Clearance"
-            }
-        ],
+    {
+        "date": "2026-03-02 08:10",
+        "location": "Amsterdam, NED",
+        "description": "Package Received"
+    },
+    {
+        "date": "2026-03-04 20:45",
+        "location": "Amsterdam, NED",
+        "description": "Departed Origin Facility"
+    },
+    {
+        "date": "2026-03-06 06:30",
+        "location": "Amsterdam, NED",
+        "description": "Custom update - review Declaration status"
+    },
+    {
+        "date": "2026-03-07 11:20",
+        "location": "Amsterdam, NED",
+        "description": "Awaiting custom inspection review"
+    },
+    {
+        "date": "2026-03-08 14:45",
+        "location": "Amsterdam, NED",
+        "description": "Custom status - review successful"
+    },
+    {
+        "date": "2026-03-09 09:15",
+        "location": "Amsterdam, NED",
+        "description": "Awaiting for courier pick up"
+    },
+    {
+        "date": "2026-03-10 16:30",
+        "location": "Amsterdam, NED",
+        "description": "Awaiting for warehouse clearance"
+    },
+    {
+        "date": "2026-03-11 08:45",
+        "location": "Amsterdam, NED",
+        "description": "Warehouse clearance successful"
+    },
+    {
+        "date": "2026-03-12 10:20",
+        "location": "Amsterdam, NED",
+        "description": "Courier pickup initiated"
+    },
+    {
+        "date": "2026-06-24 07:55",
+        "location": "Amsterdam, NED",
+        "description": "Package processed for departure"
+    }
+],
         "fees": null
     },
     "BOE900111": {
